@@ -1,0 +1,228 @@
+#include <SoftwareSerial.h>
+
+uint8_t ssRX = 2;
+uint8_t ssTX = 3;
+char c;
+char i;
+SoftwareSerial xbeeSerial(ssRX, ssTX);
+
+
+
+
+void setup() {
+
+  // start serial
+  Serial.begin(9600);
+  xbeeSerial.begin(9600);
+  Serial.println("****Welcome***");
+  Serial.println("Smart Home System Coordinator");
+}
+
+void loop() {
+  
+    //send_rev_data_tester();
+    //send_data();
+    receive_data();
+    send_cmd_2_xbees();
+}
+
+void send_data()
+{
+  int myvalue = random(0,150);
+    Serial.println(myvalue);
+
+    int ch = 0x3FB + myvalue;
+    byte checksum = ch;
+    checksum = 0xFF - checksum;
+    byte data1[] = {0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+    /* 
+     *  {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x48,0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84
+    */
+    byte data[] = {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x48,0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+
+    xbeeSerial.write(data,sizeof(data));
+    delay(2000);
+}
+
+void send_rev_data_tester()
+{
+  if(Serial.available())
+  {// If data comes in from serial monitor, send it out to XBee
+     xbeeSerial.write(Serial.read());
+    
+  }
+  if(xbeeSerial.available())
+   { // If data comes in from XBee, send it out to serial monitor
+     Serial.write(xbeeSerial.read());
+   }
+}
+
+//**********************************************************************
+//Function to receive data from all xbees
+//**********************************************************************
+void receive_data()
+{
+  if(xbeeSerial.available())
+   {
+     
+       while(c=xbeeSerial.read())
+       {
+          //*******Receive gas sensor data******
+          if(c == 'G')
+           {
+             while(c=xbeeSerial.read())
+              {
+                if(c == '1')Serial.println("GON");//send gas SN active to Nodered
+                else if(c == '2')Serial.println("GOFF");//send gas SN in-active to Nodered 
+              }
+           }
+           
+         //*******Receive Rain sensor data******
+         if(c == 'R')
+           {
+             while(c=xbeeSerial.read())
+              {
+                if(c == '1')Serial.println("RON"); //send rain SN active to Nodered
+                else if(c == '2')Serial.println("ROFF");//send rain SN in-active to Nodered
+              }
+           }
+         //*******Receive Light sensor data******
+         if(c == 'L')
+           {
+             while(c=xbeeSerial.read())
+              {
+                if(c == '1')Serial.println("LON"); //send rain SN active to Nodered
+                else if(c == '2')Serial.println("LOFF");//send rain SN in-active to Nodered
+              }
+           }
+         //*******Receive PIR sensor data******
+         if(c == 'P')
+           {
+             while(c=xbeeSerial.read())
+              {
+                if(c == '1')Serial.println("PON"); //send rain SN active to Nodered
+                else if(c == '2')Serial.println("POFF");//send rain SN in-active to Nodered
+              }
+           }
+         //*******Receive kwh pulse******
+         if(c == 'K')
+           {
+             while(c=xbeeSerial.read())
+              {
+                if(c == '1')Serial.println("KON"); //send rain SN active to Nodered
+                else if(c == '2')Serial.println("KOFF");//send rain SN in-active to Nodered
+              }
+           }
+          //*******Receive Temp pulse******
+         if(c == 'T')
+           {
+             while(c=xbeeSerial.read())
+              {
+                if(c == '1')Serial.println("TON"); //send rain SN active to Nodered
+                else if(c == '2')Serial.println("TOFF");//send rain SN in-active to Nodered
+              }
+           } 
+       }
+   }
+}
+
+//**********************************************************************
+//Function to send commands to all xbees
+//**********************************************************************
+void send_cmd_2_xbees()
+{
+    if(Serial.available())
+    {
+        int state = Serial.parseInt();
+        
+        //*******send relay 1 command******
+        if(state == 1 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x52,0x31,0x46,0x77};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("ON");
+         }
+
+        if(state == 2 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x52,0x32,0x46,0x76};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("OFF");   
+         } 
+         //*******send relay 2 command******  
+          if(state == 3 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x52,0x33,0x4E,0x6D};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("ON");
+         }
+
+         if(state == 4 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x52,0x34,0x46,0x74};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("OFF");   
+         } 
+
+         //*******send lED 1 command********************************************  
+          if(state == 5 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x4C,0x31,0x4E,0x75};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("ON");
+         }
+
+         if(state == 6 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x4C,0x32,0x46,0x7C};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("OFF");   
+         }
+
+         //*******send lED 2 command******  
+          if(state == 7 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x4C,0x33,0x4E,0x73};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("ON");
+         }
+
+         if(state == 8 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0xBE,0x91,0x6C,0xFF,0xFE,0x00,0x00,0x4C,0x34,0x46,0x7A};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("OFF");   
+         }
+
+        //*******send Buzzer command******  
+          if(state == 9 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x40,0xE7,0x44,0xCD,0xFF,0xFE,0x00,0x00,0x42,0x31,0x4E,0x43};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("ON");
+         }
+
+         if(state == 10 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x40,0xE7,0x44,0xCD,0xFF,0xFE,0x00,0x00,0x44,0x46,0x32,0x48};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("OFF");   
+         } 
+
+       //*******send Servo command******  
+          if(state == 11 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x40,0xE7,0x44,0xCD,0xFF,0xFE,0x00,0x00,0x53,0x31,0x4F,0x31};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("ON");
+         }
+
+         if(state == 12 )
+         {
+            byte data[] = {0x7E,0x00,0x11,0x10,0x01,0x00,0x13,0xA2,0x00,0x40,0xE7,0x44,0xCD,0xFF,0xFE,0x00,0x00,0x56,0x32,0x43,0x39};
+            xbeeSerial.write(data,sizeof(data));
+            Serial.println("OFF");   
+         } 
+        
+    }
+}
