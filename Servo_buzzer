@@ -1,0 +1,114 @@
+#include <SoftwareSerial.h>
+#include <Servo.h>
+
+Servo myservo; 
+#define servo_pin 9
+#define buzzer    A0
+
+
+uint8_t ssRX = 2;
+uint8_t ssTX = 3;
+int pos  = 0;
+bool buzzer_bit = 0;
+SoftwareSerial xbeeSerial(ssRX, ssTX);
+
+
+
+void setup(){
+
+   // start serial
+   Serial.begin(9600);
+   xbeeSerial.begin(9600);
+
+   myservo.attach(9);
+   pinMode(buzzer,OUTPUT);
+
+   Serial.println("****Welcome***");
+   Serial.println("Smart Home System servo_buzzer Node");
+  
+}
+
+void loop(){
+  
+      Remote_CMD();
+    //send_data();
+    //send_rev_data_tester();
+     Buzzer(buzzer_bit);
+}
+
+char c;
+void Remote_CMD()
+{
+  if(xbeeSerial.available())
+   { 
+      // Read message bytes
+         c=xbeeSerial.read();
+       if(c == 'B') //command to turn buzzer on
+        {
+          buzzer_bit = 1;
+          Serial.println("BUZZER ON"); 
+        } 
+       else if(c == 'D') //command to turn buzzer off
+        {
+          buzzer_bit = 0;
+          Serial.println("BUZZER OFF");
+          
+        }
+
+       //***********Servo Control Code*******************
+       if(c == 'S') //command to move servo to open
+        {
+          //buzzer_bit = 1;
+          Serial.println("Open"); 
+        } 
+       else if(c == 'V') //command to move servo to close
+        {
+          //buzzer_bit = 0;
+          Serial.println("Close");
+          
+        }
+   }
+}
+
+void send_data()
+{
+  int myvalue = random(0,150);
+    Serial.println(myvalue);
+
+    int ch = 0x3FB + myvalue;
+    byte checksum = ch;
+    checksum = 0xFF - checksum;
+    byte data1[] = {0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+    /* 
+     *  {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x48,0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84
+    */
+    byte data[] = {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x48,0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+
+    xbeeSerial.write(data,sizeof(data));
+    Serial.write(data,sizeof(data));
+    delay(2000);
+}
+
+void send_rev_data_tester()
+{
+  if(Serial.available())
+  {// If data comes in from serial monitor, send it out to XBee
+     xbeeSerial.write(Serial.read());
+  }
+  if(xbeeSerial.available())
+   { // If data comes in from XBee, send it out to serial monitor
+     Serial.write(xbeeSerial.read());
+   }
+}
+
+void Buzzer(bool enable)
+{
+  if(enable == 1)
+    {
+      digitalWrite(buzzer,HIGH);
+      delay(500);
+      digitalWrite(buzzer,LOW);  
+      delay(500);
+    }
+   
+}
