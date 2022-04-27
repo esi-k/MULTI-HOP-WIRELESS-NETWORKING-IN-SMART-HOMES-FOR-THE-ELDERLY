@@ -1,0 +1,62 @@
+#include <SoftwareSerial.h>
+
+#define Gas_pin   11
+#define Rain_pin  A0
+
+uint8_t ssRX = 2;
+uint8_t ssTX = 3;
+
+SoftwareSerial xbeeSerial(ssRX, ssTX);
+//byte data[] = {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x47,0x32,0xA7};
+
+
+void setup() {
+
+  // start serial
+  Serial.begin(9600);
+  xbeeSerial.begin(9600);
+  pinMode(Rain_pin,INPUT);
+  pinMode(Gas_pin,INPUT);
+  
+  Serial.println("****Welcome***");
+}
+
+void loop() {
+  
+    //send_rev_data_tester();
+    //send_data();
+    //code for rain sensor
+    if(digitalRead(Rain_pin) == 0 )
+     {
+       
+     }
+    
+}
+
+void send_data()
+{
+    int myvalue = random(0,150);
+    Serial.println(myvalue);
+
+    int ch = 0x3FB + myvalue;
+    byte checksum = ch;
+    checksum = 0xFF - checksum;
+    byte data1[] = {0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+   
+    byte data[] = {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x47,0x32,0xA7};
+
+    xbeeSerial.write(data,sizeof(data));
+    delay(2000);
+}
+
+void send_rev_data_tester()
+{
+  if(Serial.available())
+  {// If data comes in from serial monitor, send it out to XBee
+     xbeeSerial.write(Serial.read());
+  }
+  if(xbeeSerial.available())
+   { // If data comes in from XBee, send it out to serial monitor
+     Serial.write(xbeeSerial.read());
+   }
+}
