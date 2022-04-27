@@ -1,0 +1,161 @@
+#include <SoftwareSerial.h>
+
+#define Relay1  11
+#define Relay2  12
+#define LED1    A0
+#define LED2    A1
+
+uint8_t ssRX = 2;
+uint8_t ssTX = 3;
+
+SoftwareSerial xbeeSerial(ssRX, ssTX);
+
+
+
+void setup(){
+
+  // start serial
+  Serial.begin(9600);
+  xbeeSerial.begin(9600);
+
+  pinMode(Relay1,OUTPUT);
+  pinMode(Relay2,OUTPUT);
+  pinMode(LED1,OUTPUT);
+  pinMode(LED2,OUTPUT);
+
+  digitalWrite(Relay1,HIGH);
+  digitalWrite(Relay2,HIGH);
+  
+  Serial.println("****Welcome***");
+  Serial.println("Smart Home System Actuator Node");
+  
+}
+
+void loop(){
+  
+      Remote_CMD();
+   //send_data();
+   // send_rev_data_tester();
+    
+}
+
+char c;
+void Remote_CMD()
+{
+  if(xbeeSerial.available())
+   { 
+     // Read message bytes
+     while(c=xbeeSerial.read())
+     {
+       if(c == 'R')
+        {
+          Serial.print("Relay CMD Received");
+          while(c=xbeeSerial.read())
+          {
+            //Serial.print(c);
+            
+              if(c == '1') //turn on Relay 1
+              {
+                digitalWrite(Relay1,LOW);//turn relaay on
+                while(c=xbeeSerial.read())
+                if(c == 'N')Serial.println("Relay 1 ON");
+                 
+              }
+              else if (c == '2') //turn OFf Relay 1
+              {
+                digitalWrite(Relay1,HIGH); //turn relay off
+                while(c=xbeeSerial.read())
+                if(c == 'F')Serial.println("Relay 1 OFF");
+              }
+
+              // Control for relay 2
+              //*****************************************
+              if (c == '3') //turn on Relay 2
+              {
+                digitalWrite(Relay2,LOW); //turn relay 
+                while(c=xbeeSerial.read())
+                if(c == 'N')Serial.println("Relay 2 ON");
+              }
+
+              else if (c == '4') //turn off Relay 2
+              {
+                digitalWrite(Relay2,HIGH); //turn relay 
+                while(c=xbeeSerial.read())
+                if(c == 'F')Serial.println("Relay 2 OFF");
+              }
+           }    
+        }
+
+        
+       else if (c == 'L')
+        {
+           Serial.println("Led CMD Received");
+          while(c=xbeeSerial.read())
+          {
+              //Serial.println(c);
+              if (c == '1') //turn on Led 1
+              {
+                digitalWrite(LED1,LOW); //turn on Led 1 
+                while(c=xbeeSerial.read())
+                if(c == 'N')Serial.println("LED 1 ON");
+              }
+
+              else if (c == '2') //turn off Led 1
+              {
+                digitalWrite(LED1,HIGH); //turn off led 1 
+                while(c=xbeeSerial.read())
+                if(c == 'F')Serial.println("LED 1 OFF");
+              }
+
+               // Control for Led 2
+              //*****************************************
+              if (c == '3') //turn on LED2
+              {
+                digitalWrite(LED2,LOW); //turn relay 
+                while(c=xbeeSerial.read())
+                if(c == 'N')Serial.println("Led 2 ON");
+              }
+
+              else if (c == '4') //turn off LED 2
+              {
+                digitalWrite(LED2,HIGH); //turn off Led 2
+                while(c=xbeeSerial.read())
+                if(c == 'F')Serial.println("Led 2 OFF");
+              }
+              
+          }    
+        }
+     }
+   }
+}
+
+void send_data()
+{
+  int myvalue = random(0,150);
+    Serial.println(myvalue);
+
+    int ch = 0x3FB + myvalue;
+    byte checksum = ch;
+    checksum = 0xFF - checksum;
+    byte data1[] = {0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+    /* 
+     *  {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x48,0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84
+    */
+    byte data[] = {0x7E,0x00,0x18,0x10,0x01,0x00,0x13,0xA2,0x00,0x41,0x5A,0xBD,0xC4,0xFF,0xFE,0x00,0x00,0x48,0x69,0x20,0x50,0x61,0x6D,0x61,0x72,0x61,0x79,0x84};
+
+    xbeeSerial.write(data,sizeof(data));
+    Serial.write(data,sizeof(data));
+    delay(2000);
+}
+
+void send_rev_data_tester()
+{
+  if(Serial.available())
+  {// If data comes in from serial monitor, send it out to XBee
+     xbeeSerial.write(Serial.read());
+  }
+  if(xbeeSerial.available())
+   { // If data comes in from XBee, send it out to serial monitor
+     Serial.write(xbeeSerial.read());
+   }
+}
